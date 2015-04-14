@@ -1,0 +1,80 @@
+---
+title: "Activity Monitoring Report"
+author: "Vinod M"
+date: "Tuesday, April 14, 2015"
+output: html_document
+---
+##Loading and preprocessing the data :
+First the dataset (available as csv) is read into the R environment ```{r, echo=TRUE}data <- read.csv("C:/RLearning/RepResearch/activity.csv")``` . The date column in the dataset is transformed as a factor variable to enable computing the mean, median etc. in the downstream analysis . The totals steps taken per day are summed over the two month period. The histogram of the result is shown below. 
+
+
+```{r}
+data <- read.csv("C:/RLearning/RepResearch/activity.csv")
+x <- data
+x[,'date'] <- as.factor(x[,'date'])
+y <- tapply(x$steps,x$date,sum)
+hist(y)
+```
+
+The mean of steps taken per day is `r formatC(mean(y,na.rm=TRUE),'%d')` and median is:`r median(y,na.rm=TRUE)`
+
+##Average daily activity pattern
+A time series plotof the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis) is shown below:
+
+```{r}
+x <- data
+x$interval <- as.factor(x$interval)
+y <- tapply(x$steps,x$interval,mean,na.rm=TRUE)
+ plot(y,type="l",xlab="Interval",ylab="Avg. # of steps",main="Time plot of 5min intervals")
+```
+
+The max average steps occur in the `r which.max(y)` interval
+
+##Imputing missing values
+Some values in the original dataset are missing the number of steps for some intervals. The total number of missing values are `r table(is.na(data$steps))["TRUE"] ` These values are imputed by using the average value for the interval (calculated above) accross all days
+```{r}
+y <- data.frame(y)
+for(i in 1:nrow(x))
+{if(is.na(x[i,1])){x[i,1] <- y[x[i,3],]}}
+```
+
+Here is a snapshot of the dataset containing the imputed values:
+```{r}
+head(x,10)
+```
+
+A histogram of the total number of steps taken each day is below:
+
+```{r}
+x[,'date'] <- as.factor(x[,'date'])
+y <- tapply(x$steps,x$date,sum)
+hist(y)
+```
+
+The mean of the imputed data is `r mean(y)` and the median is `median(y)`
+
+
+##Differences in activity patterns between weekdays and weekends?
+
+To infer the differences between weekday and weekend activity, the data is seperated using factors weekday and weekend using a new column (called status) using the R weekdays function applied on the activity date
+```{r}
+
+x$date = as.Date(x$date)
+y <- weekdays(x$date)
+x$status <- ""
+for(i in 1:nrow(x))
+{if(y[i] =="Saturday" | y[i]=="Sunday"){x[i,"status"] <- "weekend"}else{x[i,"status"] <- "weekday"} }
+xx <- list(x$interval,x$status)
+y <- tapply(x$steps,xx,sum)
+```
+
+A panel plot containing a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis) is shown below :
+
+```{r}
+
+par(mfrow=(c(2,1)))
+plot(y[,1],type="l",xlab="Interval",ylab="steps",main="weekday")
+plot(y[,2],type="l",xlab="Interval",ylab="steps",main="weekend")
+```
+
+
